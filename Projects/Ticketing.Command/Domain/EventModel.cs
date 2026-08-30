@@ -1,10 +1,11 @@
+using Common.Core.Events;
 using MongoDB.Bson.Serialization.Attributes;
 using Ticketing.Command.Domain.Common;
 
 namespace Ticketing.Command.Domain
 {
     [BsonCollection("eventStores")]
-    public class EventModel
+    public class EventModel : Document
     {
         [BsonElement("timestamp")]
         public DateTime Timestamp { get; set; }
@@ -20,5 +21,7 @@ namespace Ticketing.Command.Domain
 
         [BsonElement("eventType")]
         public string EventType { get; set; } = string.Empty;
+
+        public BaseEvent? EventData { get; set; }
     }
 }
