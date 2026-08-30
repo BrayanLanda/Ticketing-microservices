@@ -2,7 +2,7 @@ using Common.Core.Events;
 using MongoDB.Bson.Serialization.Attributes;
 using Ticketing.Command.Domain.Common;
 
-namespace Ticketing.Command.Domain
+namespace Ticketing.Command.Domain.EventModels
 {
     [BsonCollection("eventStores")]
     public class EventModel : Document
