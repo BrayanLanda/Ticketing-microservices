@@ -1,3 +1,4 @@
+using DnsClient.Protocol;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using Ticketing.Command.Application.Models;
@@ -33,37 +34,38 @@ namespace Ticketing.Command.Infrastructure.Repositories
 
         public IQueryable<TDocument> AsQueryable()
         {
-            throw new NotImplementedException();
+            return _collection.AsQueryable();
         }
 
-        public Task<IClientSessionHandle> BeginSessionAsync(CancellationToken cancellationToken)
+        public async Task<IClientSessionHandle> BeginSessionAsync(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var option = new ClientSessionOptions();
+            option.DefaultTransactionOptions = new TransactionOptions();
+            return await _collection.Database.Client.StartSessionAsync(option, cancellationToken);
         }
 
         public void BeginTransaction(IClientSessionHandle clientSessionHandle)
         {
-            throw new NotImplementedException();
+            clientSessionHandle.StartTransaction();
         }
 
         public Task CommitTransactionAsync(IClientSessionHandle clientSessionHandle, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return clientSessionHandle.CommitTransactionAsync(cancellationToken);
         }
 
         public void DisposeSession(IClientSessionHandle clientSessionHandle)
         {
-            throw new NotImplementedException();
+            clientSessionHandle.Dispose();
         }
 
-        public Task InsertOneAsync(TDocument document, IClientSessionHandle clientSessionHandle, CancellationToken cancellationToken)
+        public async Task InsertOneAsync(TDocument document, IClientSessionHandle clientSessionHandle, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            await _collection.InsertOneAsync(
+                clientSessionHandle, document, null, cancellationToken
+            );
         }
 
-        public Task RollbackTransactionAsync(IClientSessionHandle clientSessionHandle, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
+        public Task RollbackTransactionAsync(IClientSessionHandle clientSessionHandle, CancellationToken cancellationToken) => clientSessionHandle.AbortTransactionAsync();
     }
 }
