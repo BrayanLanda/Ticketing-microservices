@@ -1,5 +1,9 @@
+using AutoMapper;
+using Common.Core.Events;
 using FluentValidation;
 using MediatR;
+using MongoDB.Driver;
+using Ticketing.Command.Domain.EventModels;
 
 namespace Ticketing.Command.Features.Tickets
 {
@@ -34,11 +38,45 @@ namespace Ticketing.Command.Features.Tickets
             }
         }
 
-        public sealed class TicketCreateCommandHandler : IRequestHandler<TicketCreateCommand, bool>
+        public sealed class TicketCreateCommandHandler(
+            IEventModelRepository eventModelRepository,
+            IMapper mapper
+        ) : IRequestHandler<TicketCreateCommand, bool>
         {
-            public Task<bool> Handle(TicketCreateCommand request, CancellationToken cancellationToken)
+            private readonly IEventModelRepository _eventModelRepository = eventModelRepository;
+            private readonly IMapper _mapper = mapper;
+            public async Task<bool> Handle(TicketCreateCommand request, CancellationToken cancellationToken)
             {
-                throw new NotImplementedException();
+                var ticketEventData = _mapper.Map<TicketCreatedEvent>(request.ticketCreateRequest);
+
+                var eventModel = new EventModel
+                {
+                    Timestamp = DateTime.UtcNow,
+                    AggegateIdentifier = Guid.CreateVersion7(DateTimeOffset.UtcNow).ToString(),
+                    Version = 1,
+                    EventType = "TicketCreateEvent",
+                    EventData = ticketEventData
+                };
+
+                IClientSessionHandle session = await _eventModelRepository.BeginSessionAsync(cancellationToken);
+
+                try
+                {
+                    _eventModelRepository.BeginTransaction(session);
+                    await _eventModelRepository.InsertOneAsync(eventModel, session, cancellationToken);   
+
+                    await _eventModelRepository.CommitTransactionAsync(session, cancellationToken);
+
+                    _eventModelRepository.DisposeSession(session);
+
+                    return true;
+                }
+                catch (System.Exception)
+                {
+                    await _eventModelRepository.RollbackTransactionAsync(session, cancellationToken);
+                    _eventModelRepository.DisposeSession(session);
+                    return false;
+                }
             }
         }
     }
