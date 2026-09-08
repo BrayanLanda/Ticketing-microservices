@@ -40,11 +40,13 @@ namespace Ticketing.Command.Features.Tickets
 
         public sealed class TicketCreateCommandHandler(
             IEventModelRepository eventModelRepository,
-            IMapper mapper
+            IMapper mapper,
+            ILogger<TicketCreateCommandHandler> logger
         ) : IRequestHandler<TicketCreateCommand, bool>
         {
             private readonly IEventModelRepository _eventModelRepository = eventModelRepository;
             private readonly IMapper _mapper = mapper;
+            private readonly ILogger<TicketCreateCommandHandler> _logger = logger;
             public async Task<bool> Handle(TicketCreateCommand request, CancellationToken cancellationToken)
             {
                 var ticketEventData = _mapper.Map<TicketCreatedEvent>(request.ticketCreateRequest);
@@ -53,29 +55,44 @@ namespace Ticketing.Command.Features.Tickets
                 {
                     Timestamp = DateTime.UtcNow,
                     AggegateIdentifier = Guid.CreateVersion7(DateTimeOffset.UtcNow).ToString(),
+                    AggregateType = "TicketAggregate",
                     Version = 1,
                     EventType = "TicketCreateEvent",
                     EventData = ticketEventData
                 };
 
-                IClientSessionHandle session = await _eventModelRepository.BeginSessionAsync(cancellationToken);
+                IClientSessionHandle? session = null;
 
                 try
                 {
+                    session = await _eventModelRepository.BeginSessionAsync(cancellationToken);
                     _eventModelRepository.BeginTransaction(session);
                     await _eventModelRepository.InsertOneAsync(eventModel, session, cancellationToken);   
 
                     await _eventModelRepository.CommitTransactionAsync(session, cancellationToken);
-
-                    _eventModelRepository.DisposeSession(session);
-
                     return true;
                 }
-                catch (System.Exception)
+                catch (Exception ex)
                 {
-                    await _eventModelRepository.RollbackTransactionAsync(session, cancellationToken);
-                    _eventModelRepository.DisposeSession(session);
+                    _logger.LogError(ex, "Could not create ticket event for user {Username}", request.ticketCreateRequest.Username);
+
+                    if (session is not null && session.IsInTransaction)
+                    {
+                        try
+                        {
+                            await _eventModelRepository.RollbackTransactionAsync(session, cancellationToken);
+                        }
+                        catch (Exception rollbackException)
+                        {
+                            _logger.LogError(rollbackException, "Could not roll back the ticket event transaction");
+                        }
+                    }
+
                     return false;
+                }
+                finally
+                {
+                    session?.Dispose();
                 }
             }
         }
