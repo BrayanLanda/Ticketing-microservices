@@ -8,11 +8,20 @@ using Ticketing.Command.Features.Apis;
 
 namespace Ticketing.Command.Features.Tickets
 {
-    public class TicketCreate : IMinimalApi
+    public sealed class TicketCreate : IMinimalApi
     {
         public void AddEndpoints(IEndpointRouteBuilder endpointRouteBuilder)
         {
-            throw new NotImplementedException();
+            endpointRouteBuilder.MapPost("/api/tickets", async (TicketCreateRequest ticketCreateRequest, IMediator mediator, CancellationToken cancellationToken) =>
+            {
+                var command = new TicketCreateCommand(ticketCreateRequest);
+                var result = await mediator.Send(command, cancellationToken);
+                return result ? Results.Ok() : Results.BadRequest();
+            })
+            .WithName("CreateTicket")
+            .WithOpenApi()
+            .Produces(200)
+            .Produces(400);
         }
         public sealed class TicketCreateRequest(
             string username, string typeError, string detailError
@@ -72,7 +81,7 @@ namespace Ticketing.Command.Features.Tickets
                 {
                     session = await _eventModelRepository.BeginSessionAsync(cancellationToken);
                     _eventModelRepository.BeginTransaction(session);
-                    await _eventModelRepository.InsertOneAsync(eventModel, session, cancellationToken);   
+                    await _eventModelRepository.InsertOneAsync(eventModel, session, cancellationToken);
 
                     await _eventModelRepository.CommitTransactionAsync(session, cancellationToken);
                     return true;
