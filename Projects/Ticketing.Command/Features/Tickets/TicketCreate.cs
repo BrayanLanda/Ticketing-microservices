@@ -4,11 +4,16 @@ using FluentValidation;
 using MediatR;
 using MongoDB.Driver;
 using Ticketing.Command.Domain.EventModels;
+using Ticketing.Command.Features.Apis;
 
 namespace Ticketing.Command.Features.Tickets
 {
-    public class TicketCreate
+    public class TicketCreate : IMinimalApi
     {
+        public void AddEndpoints(IEndpointRouteBuilder endpointRouteBuilder)
+        {
+            throw new NotImplementedException();
+        }
         public sealed class TicketCreateRequest(
             string username, string typeError, string detailError
         )
