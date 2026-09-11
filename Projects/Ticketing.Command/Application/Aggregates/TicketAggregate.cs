@@ -6,6 +6,7 @@ namespace Ticketing.Command.Application.Aggregates;
 
 public class TicketAggregate : AggregateRoot
 {
+    public bool Active { get; set; }
     public TicketAggregate(TicketCreateCommand command)
     {
         var ticketCreateEvent = new TicketCreatedEvent
@@ -15,5 +16,12 @@ public class TicketAggregate : AggregateRoot
             TypeError = command.ticketCreateRequest.TypeError,
             DetailError = command.ticketCreateRequest.DetailError
         };
+        RaiseEvent(ticketCreateEvent);
+    }
+
+    public void Apply(TicketCreatedEvent @event)
+    {
+        _id = @event.Id;
+        Active = true;
     }
 }
