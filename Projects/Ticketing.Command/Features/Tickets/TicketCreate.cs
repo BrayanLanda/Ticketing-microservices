@@ -14,7 +14,8 @@ namespace Ticketing.Command.Features.Tickets
         {
             endpointRouteBuilder.MapPost("/api/tickets", async (TicketCreateRequest ticketCreateRequest, IMediator mediator, CancellationToken cancellationToken) =>
             {
-                var command = new TicketCreateCommand(ticketCreateRequest);
+                var id = Guid.CreateVersion7(DateTimeOffset.UtcNow).ToString();
+                var command = new TicketCreateCommand(id, ticketCreateRequest);
                 var result = await mediator.Send(command, cancellationToken);
                 return result ? Results.Ok() : Results.BadRequest();
             })
@@ -32,7 +33,7 @@ namespace Ticketing.Command.Features.Tickets
             public string DetailError { get; set; } = detailError;
         }
 
-        public record TicketCreateCommand(TicketCreateRequest ticketCreateRequest) : IRequest<bool>;
+        public record TicketCreateCommand(string Id, TicketCreateRequest ticketCreateRequest) : IRequest<bool>;
 
         public class TicketCreateCommandValidator : AbstractValidator<TicketCreateCommand>
         {
@@ -40,6 +41,7 @@ namespace Ticketing.Command.Features.Tickets
             {
                 RuleFor(x => x.ticketCreateRequest)
                 .SetValidator(new TicketCreateValidator());
+                RuleFor(x => x.Id).NotEmpty().WithMessage("Enter event id");
             }
         }
 
