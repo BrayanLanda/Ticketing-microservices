@@ -12,9 +12,28 @@ public class EventStore : IEventStore
     {
         _eventModelRepository = eventModelRepository;
     }
-    public Task SaveEventsAsync(string aggregateId, IEnumerable<BaseEvent> events, int expectedVesion, CancellationToken cancellationToken)
+    public async Task SaveEventsAsync(string aggregateId, IEnumerable<BaseEvent> events, int expectedVersion, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var eventSteam = await _eventModelRepository.FilterByAsync(doc => doc.AggegateIdentifier == aggregateId, cancellationToken);
+        if(eventSteam.Any() && expectedVersion != 1 && eventSteam.Last().Version != expectedVersion)
+        {
+            throw new Exception("Concurrency Error");
+        }
+        var version = expectedVersion;
+        foreach(var @event in events)
+        {
+            version++;
+            @event.Version = version;
+            var eventType = @event.GetType().Name;
+            var eventModel = new EventModel
+            {
+              Timestamp = DateTime.UtcNow,
+              AggegateIdentifier = aggregateId,
+              Version = version,
+              EventType = eventType,
+              EventData = @event  
+            };
+        }
     }
 
     public async Task<List<BaseEvent>> GetEventsAsync(string aggregateId, CancellationToken cancellationToken)
