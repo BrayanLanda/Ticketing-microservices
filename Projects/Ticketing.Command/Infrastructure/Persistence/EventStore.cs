@@ -1,4 +1,5 @@
 using Common.Core.Events;
+using MongoDB.Driver;
 using Ticketing.Command.Domain.Abstracts;
 using Ticketing.Command.Domain.EventModels;
 
@@ -33,9 +34,25 @@ public class EventStore : IEventStore
               EventType = eventType,
               EventData = @event  
             };
+            await AddEventStore(eventModel, cancellationToken);
         }
     }
-
+    
+    private async Task AddEventStore(EventModel eventModel, CancellationToken cancellationToken)
+    {
+        IClientSessionHandle session = await _eventModelRepository.BeginSessionAsync(cancellationToken);
+        try
+        {
+            _eventModelRepository.BeginTransaction(session);
+            await _eventModelRepository.InsertOneAsync(eventModel, session, cancellationToken);
+            _eventModelRepository.DisposeSession(session);
+        }
+        catch (System.Exception)
+        {
+            await _eventModelRepository.RollbackTransactionAsync(session, cancellationToken);
+            _eventModelRepository.DisposeSession(session);
+        }
+    }
     public async Task<List<BaseEvent>> GetEventsAsync(string aggregateId, CancellationToken cancellationToken)
     {
         var eventStream = await _eventModelRepository.FilterByAsync(doc => doc.AggegateIdentifier == aggregateId, cancellationToken);
