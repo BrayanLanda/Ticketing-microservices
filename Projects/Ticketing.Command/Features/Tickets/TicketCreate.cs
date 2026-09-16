@@ -1,12 +1,7 @@
-using System.Data;
-using AutoMapper;
-using Common.Core.Events;
 using FluentValidation;
 using MediatR;
-using MongoDB.Driver;
 using Ticketing.Command.Application.Aggregates;
 using Ticketing.Command.Domain.Abstracts;
-using Ticketing.Command.Domain.EventModels;
 using Ticketing.Command.Features.Apis;
 
 namespace Ticketing.Command.Features.Tickets

@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using DnsClient.Protocol;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -67,5 +68,10 @@ namespace Ticketing.Command.Infrastructure.Repositories
         }
 
         public Task RollbackTransactionAsync(IClientSessionHandle clientSessionHandle, CancellationToken cancellationToken) => clientSessionHandle.AbortTransactionAsync();
+
+        public Task<IEnumerable<TDocument>> FilterByAsync(Expression<Func<TDocument, bool>> filterExpression, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
