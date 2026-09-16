@@ -69,9 +69,11 @@ namespace Ticketing.Command.Infrastructure.Repositories
 
         public Task RollbackTransactionAsync(IClientSessionHandle clientSessionHandle, CancellationToken cancellationToken) => clientSessionHandle.AbortTransactionAsync();
 
-        public Task<IEnumerable<TDocument>> FilterByAsync(Expression<Func<TDocument, bool>> filterExpression, CancellationToken cancellationToken)
+        public async Task<IEnumerable<TDocument>> FilterByAsync(Expression<Func<TDocument, bool>> filterExpression, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var result = await _collection.FindAsync(filterExpression, null, cancellationToken);
+            var resultList = await result.ToListAsync();
+            return resultList.Any() ? resultList : Enumerable.Empty<TDocument>();
         }
     }
 }
