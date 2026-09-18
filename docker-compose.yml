@@ -17,6 +17,20 @@ services:
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
+  
+  zookeeper:
+    image: bitname/zookeeper:3.9.1
+    container_name: zookeeper-net
+    tmpfs: "/zktmp"
+    restart: always
+    ports:
+      - "2181:2181"
+    volumes:
+      - "zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  
+  
 volumes:
   mongodb_data:
     driver: local
