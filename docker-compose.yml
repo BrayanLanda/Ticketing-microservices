@@ -19,7 +19,7 @@ services:
       - mongodb_config:/data/configdb
   
   zookeeper:
-    image: bitname/zookeeper:latest
+    image: zookeeper:latest
     container_name: zookeeper-net
     tmpfs: "/zktmp"
     restart: always
@@ -31,8 +31,8 @@ services:
       - ALLOW_ANONYMOUS_LOGIN=yes
   
   kafka:
-    image: bitnami/kafka:latest
-    container_name: kafka
+    image: apache/kafka
+    container_name: kafka-net
     ports:
       - 9092:9092
       - 29092:29092
@@ -55,11 +55,27 @@ services:
       - kafka_data:/bitnami
     depends_on:
       - zookeeper
-      
+  
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafkaui
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+
 volumes:
   mongodb_data:
     driver: local
   mongodb_config:
+    driver: local
+  kafka_data:
+    driver: local
+  zookeeper_data:
     driver: local
 
 networks:
