@@ -12,6 +12,7 @@ namespace Ticketing.Command.Application
         )
         {
             services.Configure<MongoSettings>(configuration.GetSection(nameof(MongoSettings)));
+            services.Configure<KafkaSettings>(configuration.GetSection(nameof(KafkaSettings)));
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ApplicationServiceRegistration).Assembly));
             services.AddValidatorsFromAssembly(typeof(ApplicationServiceRegistration).Assembly);
             services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
